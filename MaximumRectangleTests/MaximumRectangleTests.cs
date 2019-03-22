@@ -6,12 +6,6 @@
     using System.Linq;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-    public class PointClass
-    {
-        public int X { get; set; }
-        public int Y { get; set; }
-    }
-
     /// <summary>
     /// Finally found this: https://en.wikipedia.org/wiki/Largest_empty_rectangle
     /// This is a historic discrete mathematics problem!
@@ -51,38 +45,31 @@
 
         private Rectangle MainBody(IList<int[]> matrix)
         {
-            int m;
-            int n;
-
             var rows = matrix.Count();
             var columns = matrix.First().Count();
 
             var lineCache = Enumerable.Repeat(0, columns + 1).ToList();
-            var widthStack = new Stack<PointClass>(columns + 1);
-            for (m = 0; m < columns + 1; ++m)
-            {
-                widthStack.Push(new PointClass {X = 0, Y = 0});
-            }
+            var widthStack = new Stack<Point>(Enumerable.Repeat(new Point(0,0), columns + 1));
 
             var bestArea = 0;
-            var bestLowerLeft = new PointClass {X = 0, Y = 0};
-            var bestUpperRight = new PointClass {X = -1, Y = -1};
+            var bestLowerLeft = new Point(0, 0);
+            var bestUpperRight = new Point(-1, -1);
 
             // main loop
-            for (n = 0; n != rows; ++n)
+            for (var n = 0; n != rows; ++n)
             {
                 var openRectWidth = 0;
                 UpdateCache(lineCache, matrix[n]);
-                for (m = 0; m != columns + 1; ++m)
+
+                for (var m = 0; m != columns + 1; ++m)
                 {
                     if (lineCache[m] > openRectWidth)
                     {
                         /* Open new rectangle? */
-                        widthStack.Push(new PointClass {X = m, Y = openRectWidth});
+                        widthStack.Push(new Point( m, openRectWidth));
                         openRectWidth = lineCache[m];
                     }
-                    else /* "else" optional here */
-                    if (lineCache[m] < openRectWidth)
+                    else if (lineCache[m] < openRectWidth)
                     {
                         /* Close rectangle(s)? */
                         int m0, w0;
@@ -92,24 +79,22 @@
                             m0 = val.X;
                             w0 = val.Y;
 
-                            //pop(&m0, &w0);
                             var area = openRectWidth * (m - m0);
                             if (area > bestArea)
                             {
                                 bestArea = area;
-                                bestLowerLeft.X = m0;
-                                bestLowerLeft.Y = n;
-                                bestUpperRight.X = m - 1;
-                                bestUpperRight.Y = n - openRectWidth + 1;
+                                bestLowerLeft = new Point(m0, n);
+                                bestUpperRight = new Point(m - 1, n - openRectWidth + 1);
                             }
 
                             openRectWidth = w0;
+
                         } while (lineCache[m] < openRectWidth);
 
                         openRectWidth = lineCache[m];
                         if (openRectWidth != 0)
                         {
-                            widthStack.Push(new PointClass {X = m0, Y = w0});
+                            widthStack.Push(new Point(m0, w0));
                         }
                     }
                 }
