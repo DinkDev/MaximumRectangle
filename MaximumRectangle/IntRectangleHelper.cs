@@ -1,10 +1,10 @@
 ﻿namespace MaximumRectangle
 {
-    public class IntRectangleHelper : RectangleHelperBase<int>
+    public class IntRectangleHelper : RectangleHelperBase<int[]>
     {
-        protected override bool IsSet(int value)
+        protected override bool IsSet(int[] line, int column)
         {
-            return value == 0;
+            return line[column] == 0;
         }
     }
 }
