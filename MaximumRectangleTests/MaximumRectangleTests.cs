@@ -1,6 +1,9 @@
 ﻿namespace MaximumRectangleTests
 {
+    using System;
     using System.Collections.Generic;
+    using System.Drawing;
+    using System.Linq;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
     public class PointClass
@@ -24,85 +27,68 @@
         [TestMethod]
         public void MaximumRectangle_Test1()
         {
-            MainBody();
-        }
-
-        private List<int> _lineCache; // cache
-        private Stack<PointClass> _stack; // stack
-
-        private int _xDim;  // columns
-        private int _yDim;  // rows
-
-        void update_cache(int[] b)
-        {
-            for (var m = 0; m != _xDim; ++m)
-            {
-                if (b[m] == 0)
-                {
-                    _lineCache[m] = 0;
-                }
-                else
-                {
-                    _lineCache[m] = _lineCache[m] + 1;
-                }
-            }
-        }
-
-        void MainBody()
-        {
-            int m, n;
-            _xDim = 16; // columns
-            _yDim = 12; // rows
-
             var matrix = new List<int[]>
             {
-                new[] {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-                new[] {0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
-                new[] {0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0},
-                new[] {0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0},
-                new[] {0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0},
-                new[] {0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0},
-                new[] {0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0},
-                new[] {0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0},
-                new[] {0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-                new[] {0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-                new[] {0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0},
-                new[] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0},
+                //     0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+                new[] {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, // 0
+                new[] {0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0}, // 1
+                new[] {0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0}, // 2
+                new[] {0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0}, // 3
+                new[] {0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0}, // 4
+                new[] {0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0}, // 5
+                new[] {0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0}, // 6
+                new[] {0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0}, // 7
+                new[] {0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, // 8
+                new[] {0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, // 9
+                new[] {0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0}, // 10
+                new[] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0}, // 11
             };
 
-            _lineCache = new List<int>(_xDim + 1);
-            _stack = new Stack<PointClass>(_xDim + 1);
-            for (m = 0; m < _xDim + 1; ++m)
+            var result = MainBody(matrix);
+
+            Assert.AreEqual(new Rectangle(6, 4, 6, 2), result);
+        }
+
+        private Rectangle MainBody(IList<int[]> matrix)
+        {
+            int m;
+            int n;
+
+            var rows = matrix.Count();
+            var columns = matrix.First().Count();
+
+            var lineCache = Enumerable.Repeat(0, columns + 1).ToList();
+            var widthStack = new Stack<PointClass>(columns + 1);
+            for (m = 0; m < columns + 1; ++m)
             {
-                _lineCache.Insert(m, 0);
-                _stack.Push(new PointClass { X = 0, Y = 0 });
+                widthStack.Push(new PointClass {X = 0, Y = 0});
             }
 
             var bestArea = 0;
-            var bestLowerLeft = new PointClass { X = 0, Y = 0 };
-            var bestUpperRight = new PointClass { X = -1, Y = -1 };
+            var bestLowerLeft = new PointClass {X = 0, Y = 0};
+            var bestUpperRight = new PointClass {X = -1, Y = -1};
 
             // main loop
-            for (n = 0; n != _yDim; ++n)
+            for (n = 0; n != rows; ++n)
             {
                 var openRectWidth = 0;
-                update_cache(matrix[n]);
-                for (m = 0; m != _xDim + 1; ++m)
+                UpdateCache(lineCache, matrix[n]);
+                for (m = 0; m != columns + 1; ++m)
                 {
-                    if (_lineCache[m] > openRectWidth)
+                    if (lineCache[m] > openRectWidth)
                     {
                         /* Open new rectangle? */
-                        _stack.Push(new PointClass { X = m, Y = openRectWidth });
-                        openRectWidth = _lineCache[m];
+                        widthStack.Push(new PointClass {X = m, Y = openRectWidth});
+                        openRectWidth = lineCache[m];
                     }
                     else /* "else" optional here */
-                    if (_lineCache[m] < openRectWidth)
+                    if (lineCache[m] < openRectWidth)
                     {
                         /* Close rectangle(s)? */
                         int m0, w0;
                         do
                         {
-                            var val = _stack.Pop();
+                            var val = widthStack.Pop();
                             m0 = val.X;
                             w0 = val.Y;
 
@@ -118,19 +104,32 @@
                             }
 
                             openRectWidth = w0;
-                        } while (_lineCache[m] < openRectWidth);
+                        } while (lineCache[m] < openRectWidth);
 
-                        openRectWidth = _lineCache[m];
+                        openRectWidth = lineCache[m];
                         if (openRectWidth != 0)
                         {
-                            _stack.Push(new PointClass { X = m0, Y = w0 });
+                            widthStack.Push(new PointClass {X = m0, Y = w0});
                         }
                     }
                 }
             }
 
             TestContext.WriteLine($"The maximal rectangle has area {bestArea}");
-            TestContext.WriteLine($"Location: [col={bestLowerLeft.X}, row={bestLowerLeft.Y}] to [col={bestUpperRight.X}, row={bestUpperRight.Y}]");
+            TestContext.WriteLine(
+                $"Location: [col={bestLowerLeft.X}, row={bestLowerLeft.Y}] to [col={bestUpperRight.X}, row={bestUpperRight.Y}]");
+
+            return new Rectangle(bestLowerLeft.X, bestUpperRight.Y,
+                Math.Abs(bestUpperRight.X - bestLowerLeft.X) + 1, Math.Abs(bestUpperRight.Y - bestLowerLeft.Y) + 1);
+        }
+
+        private void UpdateCache(IList<int> cache, IList<int> row)
+        {
+            for (var x = 0; x != row.Count; ++x)
+            {
+                // TODO: will need to invert for images
+                cache[x] = row[x] == 0 ? 0 : cache[x] + 1;
+            }
         }
     }
 }
