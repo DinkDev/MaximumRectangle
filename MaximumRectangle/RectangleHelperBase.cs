@@ -21,12 +21,6 @@
 
             var bestRectangle = Rectangle.Empty;
 
-            //for (var line = 0; line < lines; ++line)
-            //{
-            //    var openRectHeight = 0;
-            //    matrixEnumerator.MoveNext();
-            //    var nextLine = matrixEnumerator.Current;
-
             var line = 0;
             foreach (var nextLine in matrix)
             { 
